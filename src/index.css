@@ -1,0 +1,272 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-brand-bg: #0B0B0B;
+  --color-brand-surface: #151515;
+  --color-brand-text: #FFFFFF;
+  --color-brand-muted: #CBC4BC;
+  --color-brand-accent: #FFEA00;
+  --color-brand-border: #2A2A2A;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-bg text-brand-text font-sans antialiased selection:bg-brand-accent selection:text-black;
+  }
+}
+
+@layer utilities {
+  .grid-bg {
+    background-size: 50px 50px;
+    background-image: linear-gradient(to right, var(--color-brand-border) 1px, transparent 1px),
+                      linear-gradient(to bottom, var(--color-brand-border) 1px, transparent 1px);
+  }
+  
+  .text-stroke {
+    -webkit-text-stroke: 1px var(--color-brand-border);
+    color: transparent;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+}
+
+/* App-specific styles */
+
+/* Ensure smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide default cursor when custom cursor is active */
+@media (pointer: fine) {
+  body {
+    cursor: none;
+  }
+  
+  a, button, [role="button"] {
+    cursor: none;
+  }
+}
+
+/* Loading screen animations */
+@keyframes loadingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading-letter {
+  animation: loadingFadeIn 0.3s ease-out forwards;
+}
+
+/* Hero ASCII art glow effect */
+.ascii-art {
+  text-shadow: 
+    0 0 10px rgba(255, 234, 0, 0.3),
+    0 0 20px rgba(255, 234, 0, 0.2),
+    0 0 30px rgba(255, 234, 0, 0.1);
+}
+
+/* Process step hover effect */
+.process-step {
+  transition: all 0.3s ease;
+}
+
+.process-step:hover {
+  transform: translateY(-4px);
+}
+
+/* Project card effects */
+.project-card {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.project-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.8) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.project-card:hover::before {
+  opacity: 1;
+}
+
+/* Service card icon animation */
+.service-card:hover .service-icon {
+  transform: rotate(5deg) scale(1.1);
+}
+
+.service-icon {
+  transition: transform 0.3s ease;
+}
+
+/* Pricing card highlight pulse */
+.pricing-highlight {
+  animation: highlightPulse 2s ease-in-out infinite;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(255, 234, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 234, 0, 0.3);
+  }
+}
+
+/* FAQ accordion smooth transition */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.faq-answer.open {
+  max-height: 500px;
+}
+
+/* Button magnetic effect placeholder */
+.magnetic-button {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Link underline animation */
+.animated-link {
+  position: relative;
+  display: inline-block;
+}
+
+.animated-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-brand-accent);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animated-link:hover::after {
+  width: 100%;
+}
+
+/* Scroll reveal animation classes */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delay utilities */
+.stagger-1 { transition-delay: 0.1s; }
+.stagger-2 { transition-delay: 0.2s; }
+.stagger-3 { transition-delay: 0.3s; }
+.stagger-4 { transition-delay: 0.4s; }
+.stagger-5 { transition-delay: 0.5s; }
+
+/* Grid overlay animation */
+.grid-overlay {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background-size: 50px 50px;
+  background-image: linear-gradient(to right, var(--color-brand-border) 1px, transparent 1px),
+                    linear-gradient(to bottom, var(--color-brand-border) 1px, transparent 1px);
+}
+
+.grid-overlay.active {
+  opacity: 0.2;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-brand-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-accent);
+}
+
+/* Selection styling */
+::selection {
+  background: var(--color-brand-accent);
+  color: #000;
+}
+
+/* Focus styling */
+:focus-visible {
+  outline: 2px solid var(--color-brand-accent);
+  outline-offset: 2px;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .heading-xl {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+  
+  .heading-lg {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  .heading-md {
+    font-size: 1.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .custom-cursor,
+  .grid-overlay,
+  .loading-screen {
+    display: none !important;
+  }
+}
