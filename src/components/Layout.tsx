@@ -160,27 +160,16 @@ export default function Layout() {
                     </ul>
                   </motion.div>
 
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mt-auto space-y-3">
-                    <button 
-                      onClick={() => { 
-                        const mockUser = { fullName: 'Developer Admin', telegram: '@admin', country: 'Global HUB', experience: 'Founder', techStack: 'Web3 / Admin', signals: ['BYPASS_ACTIVE'] };
-                        localStorage.setItem('tcc_user_data', JSON.stringify(mockUser));
-                        window.dispatchEvent(new Event('storage'));
-                        setIsMobileMenuOpen(false); 
-                        navigate('/dashboard'); 
-                      }}
-                      className="w-full p-6 border border-brand-accent/30 bg-brand-accent/5 hover:bg-brand-accent/10 hover:border-brand-accent transition-all group flex flex-col items-start"
-                    >
-                       <span className="font-mono text-[8px] text-brand-muted uppercase tracking-[0.3em] block mb-2 group-hover:text-brand-accent">Developer Bypass</span>
-                       <span className="font-mono text-[9px] text-brand-accent uppercase font-black">Member HUB Bypass</span>
-                    </button>
-                    <button 
-                      onClick={() => { setIsMobileMenuOpen(false); navigate('/admin'); }}
-                      className="w-full p-6 border border-brand-border bg-brand-surface hover:bg-white hover:border-white transition-all group flex flex-col items-start"
-                    >
-                       <span className="font-mono text-[8px] text-brand-muted uppercase tracking-[0.3em] block mb-2">Governance HUB</span>
-                       <span className="font-mono text-[9px] text-brand-text group-hover:text-black uppercase font-black">Admin Command HUB</span>
-                    </button>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mt-auto">
+                    <p className="font-mono text-[8px] text-brand-muted uppercase tracking-[0.3em] mb-4">Ecosystem Integrity</p>
+                    <div className="flex gap-4">
+                      {isRegistered ? (
+                         <button onClick={() => { localStorage.removeItem('tcc_user_data'); window.dispatchEvent(new Event('storage')); navigate('/signin'); }} className="px-6 py-3 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white font-mono text-[9px] uppercase font-black transition-all">Sign Out HUB</button>
+                      ) : (
+                         <button onClick={() => navigate('/signin')} className="px-6 py-3 border border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-black font-mono text-[9px] uppercase font-black transition-all">Member Sign In</button>
+                      )}
+                      <button onClick={() => navigate('/admin')} className="px-6 py-3 border border-brand-border text-brand-text hover:bg-white hover:text-black font-mono text-[9px] uppercase font-black transition-all">Admin HUB</button>
+                    </div>
                   </motion.div>
                 </div>
 
