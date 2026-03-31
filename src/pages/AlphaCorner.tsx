@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Gem, Lock, ArrowUpRight } from 'lucide-react';
 
-const alphas = [
-  { id: 1, title: 'Undiscovered L1 Airdrop Strategy', risk: 'High', reward: 'High', status: 'Active' },
-  { id: 2, title: 'New DeFi Protocol Yield Farming', risk: 'Medium', reward: 'High', status: 'Active' },
-  { id: 3, title: 'Upcoming NFT Mint Whitelist', risk: 'Low', reward: 'Medium', status: 'Closing Soon' },
-];
-
 export default function AlphaCorner() {
+  const [alphas, setAlphas] = React.useState<any[]>([]);
+
+  useEffect(() => {
+    const syncAlphas = () => {
+      const mockAlphas = [
+        { id: 1, title: 'Undiscovered L1 Airdrop Strategy', risk: 'High', category: 'L1', signal: 'HIGH', status: 'Active' },
+        { id: 2, title: 'New DeFi Protocol Yield Farming', risk: 'Medium', category: 'DEFI', signal: 'MEDIUM', status: 'Active' },
+        { id: 3, title: 'Upcoming NFT Mint Whitelist', risk: 'Low', category: 'NFT', signal: 'LOW', status: 'Closing Soon' },
+      ];
+      const liveAlphas = JSON.parse(localStorage.getItem('compass_global_alpha') || '[]');
+      setAlphas([...liveAlphas, ...mockAlphas]);
+    };
+
+    syncAlphas();
+    window.addEventListener('storage', syncAlphas);
+    return () => window.removeEventListener('storage', syncAlphas);
+  }, []);
   return (
     <div className="min-h-screen pb-24">
       <header className="border-b border-brand-border pt-32 pb-16 px-6 lg:px-12 bg-brand-bg relative overflow-hidden">
@@ -51,9 +62,9 @@ export default function AlphaCorner() {
                   <h3 className="font-sans font-black text-2xl uppercase tracking-tighter mb-2">
                     {alpha.title}
                   </h3>
-                  <div className="flex gap-4 font-mono text-xs uppercase tracking-widest text-brand-muted">
-                    <span>Risk: <span className="text-brand-text">{alpha.risk}</span></span>
-                    <span>Reward: <span className="text-brand-text">{alpha.reward}</span></span>
+                  <div className="flex gap-4 font-mono text-[10px] uppercase tracking-widest text-brand-muted">
+                    <span>Category: <span className="text-brand-text">{alpha.category}</span></span>
+                    <span>Signal: <span className={alpha.signal === 'HIGH' ? 'text-brand-accent font-bold' : 'text-brand-text'}>{alpha.signal}</span></span>
                   </div>
                 </div>
               </div>

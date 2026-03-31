@@ -1,44 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { GraduationCap, ArrowUpRight, PlayCircle, Check, X, Clock, BookOpen, Users } from 'lucide-react';
 
-const courses = [
-  { 
-    id: 1, 
-    title: 'Intro to Smart Contracts', 
-    level: 'Beginner', 
-    duration: '4 Weeks', 
-    type: 'Live',
-    description: 'Learn the fundamentals of writing, testing, and deploying smart contracts on Ethereum using Solidity. This course covers everything from basic syntax to common security pitfalls.',
-    modules: ['Ethereum Basics', 'Solidity Fundamentals', 'Smart Contract Security', 'Deployment & Testing'],
-    instructor: 'David O.',
-    students: 1240
-  },
-  { 
-    id: 2, 
-    title: 'Advanced DeFi Mechanisms', 
-    level: 'Advanced', 
-    duration: '6 Weeks', 
-    type: 'Recorded',
-    description: 'Dive deep into the mechanics of decentralized finance. Understand how AMMs, lending protocols, and yield aggregators work under the hood.',
-    modules: ['AMM Deep Dive', 'Lending & Borrowing Math', 'Flash Loans', 'Protocol Architecture'],
-    instructor: 'Sarah Chen',
-    students: 850
-  },
-  { 
-    id: 3, 
-    title: 'Web3 Community Management', 
-    level: 'Intermediate', 
-    duration: '3 Weeks', 
-    type: 'Live',
-    description: 'Master the art of building and scaling engaged communities in Web3. Learn tokenomics, governance, and effective communication strategies.',
-    modules: ['Community Building 101', 'Tokenomics & Incentives', 'DAO Governance', 'Crisis Management'],
-    instructor: 'Amara K.',
-    students: 2100
-  },
-];
+const getMergedCourses = () => {
+  const mockCourses = [
+    { id: 1, title: 'Intro to Smart Contracts', level: 'Beginner', duration: '4 Weeks', type: 'Live', instructor: 'David O.' },
+    { id: 2, title: 'Advanced DeFi Mechanisms', level: 'Advanced', duration: '6 Weeks', type: 'Recorded', instructor: 'Sarah Chen' },
+    { id: 3, title: 'Web3 Community Management', level: 'Intermediate', duration: '3 Weeks', type: 'Live', instructor: 'Amara K.' },
+  ];
+  const liveCourses = JSON.parse(localStorage.getItem('compass_global_tutorials') || '[]');
+  return [...liveCourses, ...mockCourses];
+};
 
 export default function TrainingProgram() {
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const syncCourses = () => {
+      setCourses(getMergedCourses());
+    };
+    syncCourses();
+    window.addEventListener('storage', syncCourses);
+    return () => window.removeEventListener('storage', syncCourses);
+  }, []);
   const [enrolledCourses, setEnrolledCourses] = useState<number[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<typeof courses[0] | null>(null);
 

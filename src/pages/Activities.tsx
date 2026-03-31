@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, ArrowUpRight, ArrowLeft, PenTool, Check } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
-const posts = [
-  { id: 1, title: 'The Evolution of Web3 Identity', author: 'Compass Editorial', date: 'Mar 15, 2026', readTime: '5 min read', content: 'Web3 identity is moving beyond simple wallet addresses. We are entering an era of decentralized identifiers (DIDs) and verifiable credentials. This shift allows users to own their reputation across platforms without relying on centralized authorities. Imagine a world where your contributions to a DAO, your on-chain activity, and your off-chain achievements are all securely tied to a privacy-preserving identity.' },
-  { id: 2, title: 'Why African Devs are Building on L2s', author: 'Community Voice', date: 'Mar 10, 2026', readTime: '8 min read', content: 'Layer 2 scaling solutions are seeing massive adoption across Africa. The reason is simple: transaction costs. When building applications for emerging markets, paying $5 for a transaction is unfeasible. L2s like Arbitrum, Optimism, and Base are enabling developers to build consumer-facing applications that are actually affordable.' },
-  { id: 3, title: 'Understanding Zero-Knowledge Proofs', author: 'Tech Team', date: 'Mar 05, 2026', readTime: '12 min read', content: 'Zero-knowledge proofs (ZKPs) are a cryptographic breakthrough that allows one party to prove to another that a statement is true, without revealing any information beyond the validity of the statement itself. This has profound implications for privacy and scalability in Web3.' },
-];
+const getMergedBlogs = () => {
+  const mockPosts = [
+    { id: 1, title: 'The Evolution of Web3 Identity', author: 'Compass Editorial', date: 'Mar 15, 2026', readTime: '5 min read', content: 'Web3 identity is moving beyond simple wallet addresses...' },
+    { id: 2, title: 'Why African Devs are Building on L2s', author: 'Community Voice', date: 'Mar 10, 2026', readTime: '8 min read', content: 'Layer 2 scaling solutions are seeing adoption...' },
+    { id: 3, title: 'Understanding Zero-Knowledge Proofs', author: 'Tech Team', date: 'Mar 05, 2026', readTime: '12 min read', content: 'Zero-knowledge proofs (ZKPs) are a cryptographic breakthrough...' },
+  ];
+  const livePosts = JSON.parse(localStorage.getItem('compass_global_blogs') || '[]');
+  return [...livePosts, ...mockPosts];
+};
 
 export default function Activities() {
-  // Mock permission state - in a real app, this would come from auth context
   const hasPostPermission = true;
+  const [posts, setPosts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const syncBlogs = () => {
+      setPosts(getMergedBlogs());
+    };
+    syncBlogs();
+    window.addEventListener('storage', syncBlogs);
+    return () => window.removeEventListener('storage', syncBlogs);
+  }, []);
 
   return (
     <div className="min-h-screen pb-24">
@@ -74,7 +87,8 @@ export default function Activities() {
 
 export function BlogDetail() {
   const { id } = useParams();
-  const post = posts.find(p => p.id === Number(id)) || posts[0];
+  const allPosts = getMergedBlogs();
+  const post = allPosts.find(p => p.id === Number(id)) || allPosts[0];
 
   return (
     <div className="min-h-screen pb-24 pt-32 px-6 lg:px-12 max-w-4xl mx-auto">
@@ -147,10 +161,19 @@ export function CreateBlog() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const post = {
+      id: Date.now(),
+      title: formData.get('title'),
+      author: formData.get('author'),
+      content: formData.get('content'),
+      status: 'PENDING',
+      postedAt: new Date().toISOString()
+    };
+
+    const drafts = JSON.parse(localStorage.getItem('compass_user_blogs') || '[]');
+    localStorage.setItem('compass_user_blogs', JSON.stringify([...drafts, post]));
     setSubmitted(true);
-    setTimeout(() => {
-      navigate('/activities');
-    }, 2000);
   };
 
   return (
@@ -168,24 +191,27 @@ export function CreateBlog() {
         </p>
 
         {submitted ? (
-          <div className="bg-green-500/10 border border-green-500/30 p-8 text-center">
-            <Check className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h3 className="font-sans font-black text-2xl text-green-500 uppercase tracking-tighter mb-2">Post Published</h3>
-            <p className="font-mono text-sm text-brand-muted">Redirecting to blog...</p>
+          <div className="bg-brand-bg border border-brand-border p-8 text-center">
+            <Check className="w-12 h-12 text-brand-accent mx-auto mb-4" />
+            <h3 className="font-sans font-black text-2xl uppercase tracking-tighter mb-2">Post Submitted</h3>
+            <p className="font-mono text-sm text-brand-muted mb-6">Your article has been submitted to the editorial team for review. You will be notified once published.</p>
+            <button onClick={() => navigate('/activities')} className="bg-brand-surface text-brand-text border border-brand-border px-6 py-3 font-mono text-xs font-bold uppercase tracking-widest hover:border-brand-accent transition-colors">
+              Return to Blog
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Post Title</label>
-              <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="Enter a catchy title..." />
+              <input required name="title" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="Enter a catchy title..." />
             </div>
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Author Name / Alias</label>
-              <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Compass Editorial" />
+              <input required name="author" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Compass Editorial" />
             </div>
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Content (Markdown supported)</label>
-              <textarea required rows={15} className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text resize-y font-mono" placeholder="Write your post content here..." />
+              <textarea required name="content" rows={15} className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text resize-y font-mono" placeholder="Write your post content here..." />
             </div>
             <div className="flex justify-end gap-4">
               <button type="button" onClick={() => navigate('/activities')} className="bg-brand-bg text-brand-text border border-brand-border px-8 py-4 font-mono text-sm font-bold uppercase tracking-widest hover:border-brand-accent transition-colors">

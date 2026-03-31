@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Briefcase, DollarSign, ArrowUpRight, ArrowLeft, Check } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
-const opportunities = [
-  { id: 1, title: 'Smart Contract Audit Bounty', protocol: 'DeFi Swap', reward: '$5,000 USDC', type: 'Bounty', description: 'We are looking for experienced smart contract auditors to review our new automated market maker (AMM) contracts before mainnet launch. The codebase is written in Solidity and utilizes advanced mathematical models for pricing. You will be responsible for identifying vulnerabilities, suggesting gas optimizations, and providing a comprehensive audit report.', requirements: ['3+ years Solidity experience', 'Previous audit reports', 'Deep understanding of DeFi protocols'] },
-  { id: 2, title: 'Frontend Developer (React/Web3)', protocol: 'NFT Marketplace', reward: '$120k/yr', type: 'Full-time', description: 'Join our core team to build the next generation of NFT marketplaces. You will be responsible for creating responsive, high-performance user interfaces that interact seamlessly with our smart contracts.', requirements: ['React/Next.js', 'Ethers.js/viem', 'Tailwind CSS'] },
-  { id: 3, title: 'Community Moderator', protocol: 'Gaming DAO', reward: '$500/mo', type: 'Part-time', description: 'Help us manage our growing Discord community. You will answer questions, organize events, and ensure a positive environment for all members.', requirements: ['Discord moderation experience', 'Knowledge of Web3 gaming', 'Excellent communication skills'] },
-  { id: 4, title: 'Write Technical Documentation', protocol: 'L2 Network', reward: '$1,000 USDC', type: 'Bounty', description: 'We need a technical writer to create comprehensive documentation for our new Layer 2 scaling solution. This includes API references, tutorials, and architecture overviews.', requirements: ['Technical writing experience', 'Understanding of rollups', 'Markdown proficiency'] },
-];
+const getMergedOpportunities = () => {
+  const mockBounties = [
+    { id: 1, title: 'Smart Contract Audit Bounty', protocol: 'DeFi Swap', company: 'DeFi Swap', reward: '$5,000 USDC', type: 'Bounty', description: 'Experienced solidity audit required.', requirements: ['Solidity', 'Security'] },
+    { id: 2, title: 'Frontend Developer (React/Web3)', protocol: 'NFT Marketplace', company: 'NFT Marketplace', reward: '$120k/yr', type: 'Full-time', description: 'React dev needed.', requirements: ['React', 'Web3'] },
+    { id: 3, title: 'Community Moderator', protocol: 'Gaming DAO', company: 'Gaming DAO', reward: '$500/mo', type: 'Part-time', description: 'Manage discord community.', requirements: ['Discord'] },
+    { id: 4, title: 'Write Technical Documentation', protocol: 'L2 Network', company: 'L2 Network', reward: '$1,000 USDC', type: 'Bounty', description: 'Technical writer for L2.', requirements: ['Docs'] },
+  ];
+  const liveBounties = JSON.parse(localStorage.getItem('compass_global_bounties') || '[]');
+  return [...liveBounties, ...mockBounties];
+};
 
 export default function EarningOpportunities() {
+  const [opportunities, setOpportunities] = useState<any[]>([]);
+
+  useEffect(() => {
+    const syncBounties = () => {
+      setOpportunities(getMergedOpportunities());
+    };
+    syncBounties();
+    window.addEventListener('storage', syncBounties);
+    return () => window.removeEventListener('storage', syncBounties);
+  }, []);
   return (
     <div className="min-h-screen pb-24">
       <header className="border-b border-brand-border pt-32 pb-16 px-6 lg:px-12 bg-brand-bg relative overflow-hidden">
@@ -73,7 +87,8 @@ export default function EarningOpportunities() {
 
 export function OpportunityDetail() {
   const { id } = useParams();
-  const opp = opportunities.find(o => o.id === Number(id)) || opportunities[0];
+  const allOpps = getMergedOpportunities();
+  const opp = allOpps.find(o => o.id === Number(id)) || allOpps[0];
   const [applied, setApplied] = useState(false);
 
   return (

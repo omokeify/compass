@@ -3,41 +3,130 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { features } from '../data/features';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
-
-const featuredProjects = [
-  {
-    id: 1,
-    title: 'DeFi Yield Dashboard',
-    desc: 'A comprehensive analytics dashboard for tracking yield farming across multiple chains.',
-    img: 'https://picsum.photos/seed/defi-dash/1200/900?grayscale',
-    thumb: 'https://picsum.photos/seed/defi-dash/200/120?grayscale'
-  },
-  {
-    id: 2,
-    title: 'NFT Marketplace UI',
-    desc: 'Next-gen marketplace interface with zero gas fees and instant trades.',
-    img: 'https://picsum.photos/seed/nft-market/1200/900?grayscale',
-    thumb: 'https://picsum.photos/seed/nft-market/200/120?grayscale'
-  },
-  {
-    id: 3,
-    title: 'DAO Governance Portal',
-    desc: 'Streamlined voting and proposal management for decentralized autonomous organizations.',
-    img: 'https://picsum.photos/seed/dao-gov/1200/900?grayscale',
-    thumb: 'https://picsum.photos/seed/dao-gov/200/120?grayscale'
-  },
-  {
-    id: 4,
-    title: 'Web3 Mobile Wallet',
-    desc: 'Secure, multi-chain mobile wallet with social recovery features.',
-    img: 'https://picsum.photos/seed/web3-wallet/1200/900?grayscale',
-    thumb: 'https://picsum.photos/seed/web3-wallet/200/120?grayscale'
-  }
-];
+import { TextGlitch } from '../components/ui/text-glitch-effect';
+import { useNavigate } from 'react-router-dom';
+import { supabase, useSupabase } from '../lib/supabase';
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeProject, setActiveProject] = useState(0);
+
+  // Dynamic Content States
+  const [hero, setHero] = useState({ 
+    title: "Web3 Community That Moves.", 
+    desc: "A decentralized platform for news, alpha, earning, and learning. Built for the next generation of builders and creators." 
+  });
+  const [spotlight, setSpotlight] = useState({
+    name: "Sarah Chen",
+    role: "UX/UI Designer & Web3 Researcher",
+    quote: "Sarah secured a $5k grant after just 2 months of active contribution in TCC.",
+    img: "https://picsum.photos/seed/sarah/800/800?grayscale"
+  });
+  const [marqueeText, setMarqueeText] = useState('+++ JOIN THE COMPASS +++ FIND ALPHA +++ EARN REWARDS +++ LEARN SKILLS +++');
+  const [featuredProjects, setFeaturedProjects] = useState<any[]>([]);
+  const [comparisonRows, setComparisonRows] = useState<any[]>([]);
+  const [serviceCards, setServiceCards] = useState<any[]>([]);
+  const [faqs, setFaqs] = useState<any[]>([]);
+
+  useEffect(() => {
+    const syncVision = async () => {
+      // Marquee
+      const mSettings = JSON.parse(localStorage.getItem('compass_marquee_settings') || '{"text":"+++ JOIN THE COMPASS +++ FIND ALPHA +++ EARN REWARDS +++ LEARN SKILLS +++"}');
+      setMarqueeText(mSettings.text);
+
+      // SUPABASE DATA FETCHING
+      if (useSupabase) {
+        try {
+          // Fetch Vision Configs
+          const { data: config } = await supabase.from('platform_config').select('*');
+          if (config) {
+            const heroRow = config.find(c => c.id === 'compass_hero_content');
+            const spotlightRow = config.find(c => c.id === 'compass_spotlight_content');
+            const comparisonsRow = config.find(c => c.id === 'compass_comparison_rows');
+            const servicesRow = config.find(c => c.id === 'compass_service_cards');
+            const marqueeRow = config.find(c => c.id === 'compass_marquee_settings');
+
+            if (heroRow) setHero(heroRow.content);
+            if (spotlightRow) setSpotlight(spotlightRow.content);
+            if (comparisonsRow) setComparisonRows(comparisonsRow.content);
+            if (servicesRow) setServiceCards(servicesRow.content);
+            if (marqueeRow) setMarqueeText(marqueeRow.content.text);
+          }
+
+          // Fetch Feeds (Projects & FAQs)
+          const { data: alphaData } = await supabase.from('alpha_bounties_gigs').select('*').eq('is_live', true);
+          if (alphaData) {
+            const projList = alphaData.filter(a => a.type === 'PROJECT').map(a => a.payload);
+            const faqList = alphaData.filter(a => a.type === 'FAQ').map(a => a.payload);
+            if (projList.length > 0) setFeaturedProjects(projList);
+            if (faqList.length > 0) setFaqs(faqList);
+          }
+        } catch (err) {
+          console.error('Supabase fetch failed, falling back:', err);
+        }
+      }
+
+      // Local Fallbacks (If Supabase is disabled or empty)
+      if (!useSupabase || featuredProjects.length === 0) {
+        const savedProjects = JSON.parse(localStorage.getItem('compass_global_projects') || '[]');
+        if (savedProjects.length > 0) {
+          setFeaturedProjects(savedProjects);
+        } else {
+          setFeaturedProjects([
+            { id: 1, title: 'DeFi Yield Dashboard', desc: 'A comprehensive analytics dashboard for tracking yield farming.', img: 'https://picsum.photos/seed/defi-dash/1200/900?grayscale', thumb: 'https://picsum.photos/seed/defi-dash/200/120?grayscale' },
+            { id: 2, title: 'NFT Marketplace UI', desc: 'Next-gen marketplace interface with zero gas fees.', img: 'https://picsum.photos/seed/nft-market/1200/900?grayscale', thumb: 'https://picsum.photos/seed/nft-market/200/120?grayscale' },
+            { id: 3, title: 'DAO Governance Portal', desc: 'Streamlined voting and proposal management.', img: 'https://picsum.photos/seed/dao-gov/1200/900?grayscale', thumb: 'https://picsum.photos/seed/dao-gov/200/120?grayscale' },
+            { id: 4, title: 'Web3 Mobile Wallet', desc: 'Secure, multi-chain mobile wallet with social recovery.', img: 'https://picsum.photos/seed/web3-wallet/1200/900?grayscale', thumb: 'https://picsum.photos/seed/web3-wallet/200/120?grayscale' }
+          ]);
+        }
+      }
+
+      if (!useSupabase || comparisonRows.length === 0) {
+        const savedRows = JSON.parse(localStorage.getItem('compass_comparison_rows') || '[]');
+        if (savedRows.length > 0) setComparisonRows(savedRows);
+        else setComparisonRows([
+          { label: 'Signal Source', legacy: 'Crowdsourced', paid: 'Single Caller', compass: 'Vetted Experts' },
+          { label: 'Access Cost', legacy: 'Hidden/Variable', paid: 'Premium Subs', compass: 'Integrated Value' },
+          { label: 'Platform', legacy: 'Noisy Discord', paid: 'Telegram Bot', compass: 'Dynamic Hub' },
+          { label: 'Reliability', legacy: 'Unverified', paid: 'Hit or Miss', compass: 'Real-time Signal' },
+          { label: 'Engagement', legacy: 'Passive', paid: 'One-way', compass: 'Active Bounties' },
+          { label: 'Outcome', legacy: 'Liquidity', paid: 'Short-term', compass: 'Shared Growth' },
+        ]);
+      }
+
+      if (!useSupabase || serviceCards.length === 0) {
+        const savedServices = JSON.parse(localStorage.getItem('compass_service_cards') || '[]');
+        if (savedServices.length > 0) setServiceCards(savedServices);
+        else setServiceCards([
+          { title: "Real-Time Alpha", hover: "INSTANT SIGNAL", desc: "Verified signal across DeFi, NFTs, and emerging chains.", link: "/alpha-corner" },
+          { title: "KOL Network", hover: "AMPLIFY REACH", desc: "Direct access to top-tier Key Opinion Leaders.", link: "/dashboard" },
+          { title: "Viral Marketing", hover: "BUILD HYPΞ", desc: "Creative, high-impact marketing campaigns.", link: "/dashboard" },
+          { title: "Earning Bounties", hover: "GET PΛID", desc: "Direct access to curated gig opportunities.", link: "/earning-opportunities" },
+          { title: "Talent Hub", hover: "HIRΞ BUILDΞRS", desc: "Hire the best Web3 builders or offer services.", link: "/skill-marketplace" },
+          { title: "Launchpad Support", hover: "GO-TO-MΛRKΞT", desc: "Strategic guidance for token launches.", link: "/dashboard" },
+          { title: "PR & Media", hover: "STΛY VISIBLΞ", desc: "Secured features in leading Web3 publications.", link: "/dashboard" },
+          { title: "Governance Advisory", hover: "SCΛLΞ DΛOS", desc: "Expert consulting on DAO structure.", link: "/dashboard" },
+          { title: "Narrative Building", hover: "CRΞΛTΞ STORY", desc: "Crafting compelling project stories.", link: "/dashboard" }
+        ]);
+      }
+
+      if (!useSupabase || faqs.length === 0) {
+        const savedFaqs = JSON.parse(localStorage.getItem('compass_global_faqs') || '[]');
+        if (savedFaqs.length > 0) setFaqs(savedFaqs);
+        else setFaqs([
+          { question: "What exactly is Compass?", answer: "Compass is a gated intelligence hub for the Web3 elite. We combine high-signal alpha, structured earning opportunities, and a directory of verified talent into one seamless experience." },
+          { question: "How do I get access to the Hub?", answer: "Access is granted through our verified onboarding sequence. Once you submit your builder profile and it passes our initial signal check, you'll gain access to Tier 1 of the ecosystem." },
+          { question: "Are there costs involved?", answer: "Entry to the basic hub (Tier 1) is open for those who pass verification. Advanced Alpha channels and elite Genesis bounties may require specific reputation scores." },
+          { question: "How fast can I start earning?", answer: "Immediately after onboarding. Once you're in, you can browse the Earning Ops tab for active bounties or list your services in the Skills Marketplace." }
+        ]);
+      }
+    };
+
+    syncVision();
+    window.addEventListener('storage', syncVision);
+    return () => window.removeEventListener('storage', syncVision);
+  }, [useSupabase]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,21 +156,28 @@ export default function LandingPage() {
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    handleScroll(); 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col pt-20">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 lg:px-12 w-full border-b border-brand-border">
-        <div className="w-full">
+      <section className="relative pb-24 px-6 lg:px-12 w-full border-b border-brand-border overflow-hidden bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:40px_40px]">
+        <div className="w-full relative">
+          {/* Visual Dot from Image */}
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="w-3 h-3 bg-brand-accent rounded-full mb-8 ml-32"
+          />
+
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h1 className="font-sans font-black text-[12vw] leading-[0.85] tracking-tighter uppercase mb-8 break-words">
+            <h1 className="font-sans font-black text-[12vw] leading-[0.85] tracking-tighter uppercase mb-12 break-words text-white">
               Web3 <br />
               <span className="text-brand-accent">Community</span> <br />
               That Moves.
@@ -92,13 +188,12 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="flex flex-col sm:flex-row gap-8 items-start sm:items-center w-full justify-between"
+            className="flex flex-col sm:flex-row gap-8 items-end sm:items-center w-full justify-between"
           >
-            <p className="font-mono text-sm sm:text-lg text-brand-muted max-w-2xl leading-relaxed">
-              A decentralized platform for news, alpha, earning, and learning. 
-              Built for the next generation of builders and creators.
+            <p className="font-mono text-sm sm:text-base text-brand-muted max-w-xl leading-relaxed uppercase tracking-wider">
+              {hero.desc}
             </p>
-            <button className="group flex items-center gap-3 bg-brand-accent text-black px-8 py-4 font-mono text-sm font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300">
+            <button className="group flex items-center gap-4 bg-brand-accent text-black px-10 py-5 font-mono text-xs font-black uppercase tracking-[0.2em] hover:bg-white transition-all duration-300">
               Explore Alpha
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
@@ -108,10 +203,10 @@ export default function LandingPage() {
 
       {/* Marquee */}
       <div className="border-b border-brand-border overflow-hidden py-4 bg-brand-surface">
-        <div className="flex whitespace-nowrap animate-[marquee_20s_linear_infinite]">
-          {[...Array(4)].map((_, i) => (
+        <div className="flex whitespace-nowrap animate-[marquee_30s_linear_infinite]">
+          {[...Array(6)].map((_, i) => (
             <span key={i} className="font-mono text-xs uppercase tracking-widest text-brand-muted mx-8">
-              +++ JOIN THE COMPASS +++ FIND ALPHA +++ EARN REWARDS +++ LEARN SKILLS +++
+              {marqueeText}
             </span>
           ))}
         </div>
@@ -120,7 +215,7 @@ export default function LandingPage() {
       {/* Spotlight Section */}
       <section className="py-24 px-6 lg:px-12 w-full max-w-7xl mx-auto border-b border-brand-border">
         <div className="flex justify-between items-end mb-16 border-b border-brand-border pb-8">
-          <h2 className="font-sans font-black text-4xl sm:text-6xl tracking-tighter uppercase">
+          <h2 className="font-sans font-black text-4xl sm:text-6xl tracking-tighter uppercase text-white">
             Community <br /> Spotlight
           </h2>
           <span className="font-mono text-sm text-brand-muted hidden sm:block">02 // WINS</span>
@@ -137,8 +232,8 @@ export default function LandingPage() {
           <div className="w-full md:w-1/2 h-[400px] md:h-[500px] relative overflow-hidden">
             <div className="absolute inset-0 bg-brand-accent mix-blend-multiply opacity-0 group-hover:opacity-20 transition-opacity duration-500 z-10" />
             <img 
-              src="https://picsum.photos/seed/sarah/800/800?grayscale" 
-              alt="Sarah Chen" 
+              src={spotlight.img} 
+              alt={spotlight.name} 
               className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
               referrerPolicy="no-referrer"
             />
@@ -153,13 +248,21 @@ export default function LandingPage() {
               <span className="font-sans font-black text-9xl">"</span>
             </div>
             
-            <h3 className="font-sans font-black text-3xl sm:text-4xl uppercase tracking-tighter mb-6 leading-tight relative z-10">
-              "Sarah secured a <span className="text-brand-accent">$5k grant</span> after just 2 months of active contribution in TCC."
+            <h3 className="font-sans font-black text-3xl sm:text-4xl uppercase tracking-tighter mb-6 leading-tight relative z-10 text-white">
+              {spotlight.quote.split(/(\$5k grant)/i).map((part, i) => (
+                <React.Fragment key={i}>
+                  {part.toLowerCase() === '$5k grant' ? (
+                    <span className="text-brand-accent">{part}</span>
+                  ) : (
+                    part
+                  )}
+                </React.Fragment>
+              ))}
             </h3>
             
             <div className="mt-auto pt-8 border-t border-brand-border">
-              <p className="font-sans font-bold text-xl uppercase tracking-tighter">Sarah Chen</p>
-              <p className="font-mono text-sm text-brand-muted">UX/UI Designer & Web3 Researcher</p>
+              <p className="font-sans font-bold text-xl uppercase tracking-tighter text-white">{spotlight.name}</p>
+              <p className="font-mono text-sm text-brand-muted">{spotlight.role}</p>
             </div>
           </div>
         </motion.div>
@@ -168,14 +271,13 @@ export default function LandingPage() {
       {/* Features Sticky Scroll Section */}
       <section id="features" className="py-24 px-6 lg:px-12 w-full max-w-7xl mx-auto relative">
         <div className="flex justify-between items-end mb-16 border-b border-brand-border pb-8">
-          <h2 className="font-sans font-black text-4xl sm:text-6xl tracking-tighter uppercase">
-            Platform <br /> Features
+          <h2 className="font-sans font-black text-4xl sm:text-6xl tracking-tighter uppercase text-white">
+            Platform <br /> <span className="text-brand-accent">Features</span>
           </h2>
           <span className="font-mono text-sm text-brand-muted hidden sm:block">03 // ECOSYSTEM</span>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-12 relative items-start">
-          {/* Left side: Scrolling list */}
           <div className="w-full lg:w-1/2 pb-[30vh]">
             {features.map((feature, index) => (
               <div
@@ -185,7 +287,6 @@ export default function LandingPage() {
                 }`}
               >
                 <div className="flex items-start gap-6">
-                  {/* Indicator square */}
                   <div className={`w-3 h-3 mt-3 shrink-0 transition-colors duration-500 ${
                     activeFeature === index ? 'bg-brand-accent' : 'bg-brand-border'
                   }`} />
@@ -193,25 +294,27 @@ export default function LandingPage() {
                     <span className="font-mono text-sm text-brand-muted mb-4 block">
                       0{index + 1}
                     </span>
-                    <h3 className="font-sans font-black text-4xl sm:text-5xl uppercase tracking-tighter mb-6">
+                    <h3 className="font-sans font-black text-4xl sm:text-5xl uppercase tracking-tighter mb-6 text-white">
                       {feature.title}
                     </h3>
                     <p className="font-mono text-base text-brand-muted leading-relaxed max-w-md">
                       {feature.purpose}
                     </p>
-                    <Link
-                      to={`/${feature.id}`}
+                    <button
+                      onClick={() => {
+                        const isRegistered = localStorage.getItem('tcc_user_data');
+                        navigate(isRegistered ? `/${feature.id}` : '/onboarding');
+                      }}
                       className="inline-flex items-center gap-2 mt-8 font-mono text-sm font-bold uppercase tracking-widest text-brand-text hover:text-brand-accent transition-colors"
                     >
                       Explore Module <ArrowUpRight className="w-4 h-4" />
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Right side: Sticky Image/Content */}
           <div className="hidden lg:block w-1/2 sticky top-32 h-[calc(100vh-16rem)]">
             <div className="w-full h-full border border-brand-border bg-brand-surface relative overflow-hidden">
               <AnimatePresence mode="wait">
@@ -223,7 +326,6 @@ export default function LandingPage() {
                   transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   className="absolute inset-0"
                 >
-                  {/* Using Picsum for placeholder images, tinted with brand colors */}
                   <div className="absolute inset-0 bg-brand-accent mix-blend-multiply z-10 opacity-20" />
                   <div className="absolute inset-0 bg-brand-bg mix-blend-color z-10 opacity-60" />
                   <img
@@ -232,8 +334,6 @@ export default function LandingPage() {
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
-                  
-                  {/* Overlay content */}
                   <div className="absolute inset-0 z-20 p-12 flex flex-col justify-end bg-gradient-to-t from-brand-bg via-brand-bg/80 to-transparent">
                     <div className="w-16 h-16 bg-brand-bg border border-brand-border flex items-center justify-center text-brand-accent mb-6">
                       {React.createElement(features[activeFeature].icon, { className: "w-8 h-8" })}
@@ -252,24 +352,20 @@ export default function LandingPage() {
       {/* Featured Work Section */}
       <section id="featured-work" className="w-full border-t border-brand-border bg-brand-bg relative">
         <div className="flex flex-col lg:flex-row w-full">
-          
-          {/* Left Column: Sticky Text & Thumbnails */}
           <div className="w-full lg:w-1/3 lg:sticky lg:top-0 lg:h-screen flex flex-col justify-center px-6 lg:pl-12 lg:pr-12 py-24 z-20 bg-brand-bg self-start">
             <div className="flex justify-between items-end mb-6">
-              <h2 className="font-sans font-black text-5xl sm:text-6xl tracking-tighter">
-                Featured Work
+              <h2 className="font-sans font-black text-5xl sm:text-6xl tracking-tighter text-white">
+                Work <br /> <span className="text-brand-accent">Gallery</span>
               </h2>
               <span className="font-mono text-sm text-brand-muted hidden sm:block">04 // PROJECTS</span>
             </div>
             <p className="font-mono text-brand-muted mb-12 leading-relaxed text-sm sm:text-base">
-              We highlight the best projects built by our community. Every line of code, every smart contract, and every interaction feels intentional. The details most teams skip are the details we care about most.
+              The high-fidelity work that defines our community's standard of excellence.
             </p>
-
-            {/* Thumbnails */}
             <div className="flex flex-col gap-4 mb-16">
               {featuredProjects.map((proj, idx) => (
                 <button
-                  key={proj.id}
+                  key={idx}
                   onClick={() => {
                     const el = document.getElementById(`project-image-${idx}`);
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -277,46 +373,20 @@ export default function LandingPage() {
                   className="relative flex items-center gap-4 group w-40"
                 >
                   <div className={`relative w-32 h-20 overflow-hidden transition-all duration-500 border border-brand-border ${
-                    activeProject === idx 
-                      ? 'opacity-100 border-brand-accent' 
-                      : 'opacity-40 grayscale group-hover:opacity-80 group-hover:grayscale-0'
+                    activeProject === idx ? 'opacity-100 border-brand-accent' : 'opacity-40 grayscale group-hover:opacity-80 group-hover:grayscale-0'
                   }`}>
-                    <img 
-                      src={proj.thumb} 
-                      alt={proj.title} 
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                    {/* Hover overlay for inactive thumbs */}
-                    {activeProject !== idx && (
-                      <div className="absolute inset-0 bg-brand-bg/40 group-hover:bg-transparent transition-colors duration-300" />
-                    )}
+                    <img src={proj.thumb} alt={proj.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    {activeProject !== idx && <div className="absolute inset-0 bg-brand-bg/40 group-hover:bg-transparent transition-colors duration-300" />}
                   </div>
-                  
-                  {/* Active Indicator Square */}
-                  <div className={`w-2 h-2 shrink-0 transition-colors duration-300 ${
-                    activeProject === idx ? 'bg-brand-accent' : 'bg-transparent'
-                  }`} />
+                  <div className={`w-2 h-2 shrink-0 transition-colors duration-300 ${activeProject === idx ? 'bg-brand-accent' : 'bg-transparent'}`} />
                 </button>
               ))}
             </div>
-
-            {/* CTA Buttons */}
-            <div className="flex mt-auto">
-              <button className="bg-brand-accent text-black px-6 py-3 font-mono text-sm font-bold uppercase tracking-widest hover:bg-white transition-colors">
-                View All
-              </button>
-              <button className="bg-brand-accent text-black border-l border-black/20 px-4 py-3 hover:bg-white transition-colors">
-                +
-              </button>
-            </div>
           </div>
-
-          {/* Right Column: Scrolling Large Images */}
           <div className="w-full lg:w-2/3 relative">
             {featuredProjects.map((proj, idx) => (
               <motion.div 
-                key={proj.id} 
+                key={idx} 
                 id={`project-image-${idx}`}
                 initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
                 whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -324,32 +394,118 @@ export default function LandingPage() {
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 className="project-image-item w-full h-[50vh] sm:h-[70vh] lg:h-screen relative bg-brand-surface border-l border-b border-brand-border overflow-hidden"
               >
-                {/* Brand tint overlay */}
                 <div className="absolute inset-0 bg-brand-accent mix-blend-multiply z-10 opacity-10 pointer-events-none" />
-                <div className="absolute inset-0 bg-brand-bg mix-blend-color z-10 opacity-20 pointer-events-none" />
-                
-                <img
-                  src={proj.img}
-                  alt={proj.title}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                
-                {/* Image Label Overlay */}
+                <img src={proj.img} alt={proj.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-brand-bg/90 via-brand-bg/40 to-transparent z-20">
-                  <h3 className="font-sans font-black text-3xl sm:text-4xl uppercase tracking-tighter text-white mb-2">
-                    {proj.title}
-                  </h3>
-                  <p className="font-mono text-base text-brand-muted max-w-lg">
-                    {proj.desc}
-                  </p>
+                  <h3 className="font-sans font-black text-3xl sm:text-4xl uppercase tracking-tighter text-white mb-2">{proj.title}</h3>
+                  <p className="font-mono text-base text-brand-muted max-w-lg">{proj.desc}</p>
                 </div>
               </motion.div>
             ))}
           </div>
-
         </div>
       </section>
+
+      {/* Why Compass? Comparison Section */}
+      <section id="why-compass" className="py-32 px-6 lg:px-12 w-full border-t border-brand-border">
+        <div className="flex flex-col lg:flex-row gap-16 lg:gap-24">
+          <div className="w-full lg:w-1/3">
+            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <h2 className="font-sans font-black text-5xl sm:text-7xl tracking-tighter uppercase mb-8 leading-[0.9] text-white">
+                Why <br /><span className="text-brand-accent">Compass?</span>
+              </h2>
+              <p className="font-mono text-brand-muted mb-12 leading-relaxed">
+                Navigating the noise with precision. We combine the depth of research with the speed of a degen community.
+              </p>
+              <div className="flex items-stretch h-14 w-full sm:w-64">
+                <button className="flex-1 bg-brand-accent text-black px-8 font-mono text-xs font-black uppercase tracking-[0.2em] hover:bg-white transition-all">Join Mission</button>
+                <button className="aspect-square bg-brand-accent text-black border-l border-black/10 flex items-center justify-center hover:bg-white transition-all"><ArrowRight className="w-5 h-5"/></button>
+              </div>
+            </motion.div>
+          </div>
+          <div className="w-full lg:w-2/3">
+            <div className="bg-brand-surface border border-brand-border overflow-hidden">
+              <div className="grid grid-cols-4 border-b border-brand-border">
+                <div className="p-4 border-r border-brand-border"></div>
+                <div className="p-4 border-r border-brand-border flex items-end"><span className="font-mono text-[9px] uppercase text-brand-muted">Legacy</span></div>
+                <div className="p-4 border-r border-brand-border flex items-end"><span className="font-mono text-[9px] uppercase text-brand-muted">Paid Callers</span></div>
+                <div className="p-4 bg-white flex items-center gap-2"><div className="w-2 h-2 bg-brand-accent"/><span className="font-mono text-[9px] uppercase font-black text-black">Compass</span></div>
+              </div>
+              {comparisonRows.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-4 border-b border-brand-border last:border-b-0">
+                  <div className="p-4 border-r border-brand-border flex items-center"><span className="font-mono text-[9px] uppercase text-brand-muted">{row.label}</span></div>
+                  <div className="p-4 border-r border-brand-border flex items-center"><span className="font-sans text-xs text-brand-muted/80">{row.legacy}</span></div>
+                  <div className="p-4 border-r border-brand-border flex items-center"><span className="font-sans text-xs text-brand-muted/80">{row.paid}</span></div>
+                  <div className="p-4 bg-white/95 flex items-center"><span className="font-sans text-xs font-bold text-black">{row.compass}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section id="services" className="py-32 px-6 lg:px-12 w-full border-t border-brand-border bg-brand-bg">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row justify-between items-start mb-20 gap-8">
+            <h2 className="font-sans font-black text-5xl sm:text-7xl tracking-tighter uppercase leading-[0.9] text-white">
+               One Hub. <br /> <span className="text-brand-accent">Full Access.</span>
+            </h2>
+            <span className="font-mono text-xs uppercase text-brand-accent tracking-widest">// INTEGRATED MODULES</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-12">
+            {serviceCards.map((card, i) => (
+              <div key={i} onClick={() => {
+                const isRegistered = localStorage.getItem('tcc_user_data');
+                navigate(isRegistered ? card.link : '/onboarding');
+              }} className="space-y-6 group cursor-pointer border-b border-brand-border pb-6 hover:border-brand-accent transition-colors">
+                <TextGlitch text={card.title} hoverText={card.hover} className="font-mono !text-xs font-black uppercase tracking-widest text-white"/>
+                <p className="font-mono text-xs text-brand-muted leading-relaxed group-hover:text-brand-text transition-colors">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-32 px-6 lg:px-12 border-t border-brand-border bg-brand-bg">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+          <div className="lg:col-span-5">
+            <h2 className="font-sans font-black text-6xl sm:text-7xl lg:text-8xl uppercase tracking-tighter leading-none text-white">
+              FAQ <br /> <span className="text-brand-accent">HINT</span>
+            </h2>
+          </div>
+          <div className="lg:col-span-7">
+            <div className="space-y-0">
+              {faqs.map((faq, i) => (
+                <FAQItem key={i} question={faq.question} answer={faq.answer} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function FAQItem({ question, answer }: { question: string, answer: string }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  return (
+    <div className="border-b border-brand-border py-8 group cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+      <div className="w-full flex justify-between items-start gap-8">
+        <TextGlitch text={question} hoverText="REVEAL INTEL" className="font-mono !text-xs sm:!text-sm font-black uppercase tracking-[0.2em] w-full text-white" />
+        <div className={`w-6 h-6 flex items-center justify-center border border-brand-border transition-all mt-1 shrink-0 ${isOpen ? 'bg-brand-accent border-brand-accent text-black rotate-45' : 'bg-transparent text-brand-muted rotate-0'}`}>
+           <span className="font-mono text-lg leading-none">+</span>
+        </div>
+      </div>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <p className="font-mono text-xs text-brand-muted mt-6 uppercase tracking-widest leading-relaxed max-w-2xl">{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

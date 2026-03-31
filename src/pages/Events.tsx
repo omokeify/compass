@@ -1,15 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Calendar, MapPin, ArrowUpRight, ArrowLeft, Check } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
-const events = [
-  { id: 1, title: 'Web3 Lagos Conference', date: 'April 15-17, 2026', location: 'Lagos, Nigeria', type: 'In-Person', description: 'The largest Web3 conference in West Africa, bringing together developers, founders, and investors to discuss the future of decentralized technologies on the continent. Features keynote speakers, workshops, and a massive hackathon.', speakers: ['Sarah Chen', 'Marcus Johnson'], capacity: 500, registered: 342 },
-  { id: 2, title: 'DeFi Builders Hackathon', date: 'May 01-03, 2026', location: 'Online', type: 'Virtual', description: 'A 48-hour virtual hackathon focused on building the next generation of decentralized finance protocols. $50k in prizes available.', speakers: ['Elena Rodriguez'], capacity: 1000, registered: 890 },
-  { id: 3, title: 'African Crypto Summit', date: 'June 10, 2026', location: 'Nairobi, Kenya', type: 'Hybrid', description: 'Exploring the regulatory landscape and adoption metrics of cryptocurrency across African nations.', speakers: ['David O.', 'Amara K.'], capacity: 300, registered: 150 },
-];
+const getMergedEvents = () => {
+  const mockEvents = [
+    { id: 1, title: 'Web3 Lagos Conference', date_time: 'April 15-17, 2026', location: 'Lagos, Nigeria', type: 'In-Person', date: 'April 15' },
+    { id: 2, title: 'DeFi Builders Hackathon', date_time: 'May 01-03, 2026', location: 'Online', type: 'Virtual', date: 'May 01' },
+    { id: 3, title: 'African Crypto Summit', date_time: 'June 10, 2026', location: 'Nairobi, Kenya', type: 'Hybrid', date: 'June 10' },
+  ];
+  const liveEvents = JSON.parse(localStorage.getItem('compass_global_events') || '[]');
+  return [...liveEvents, ...mockEvents];
+};
 
 export default function Events() {
+  const [eventList, setEventList] = React.useState<any[]>([]);
+
+  useEffect(() => {
+    const syncEvents = () => {
+      setEventList(getMergedEvents());
+    };
+    syncEvents();
+    window.addEventListener('storage', syncEvents);
+    return () => window.removeEventListener('storage', syncEvents);
+  }, []);
   return (
     <div className="min-h-screen pb-24">
       <header className="border-b border-brand-border pt-32 pb-16 px-6 lg:px-12 bg-brand-bg relative overflow-hidden">
@@ -35,7 +49,7 @@ export default function Events() {
 
       <div className="w-full px-6 lg:px-12 mt-12 max-w-7xl mx-auto">
         <div className="flex flex-col gap-6">
-          {events.map((event, index) => (
+          {eventList.map((event, index) => (
             <motion.div
               key={event.id}
               initial={{ opacity: 0, x: 20 }}
@@ -78,7 +92,8 @@ export default function Events() {
 
 export function EventDetail() {
   const { id } = useParams();
-  const event = events.find(e => e.id === Number(id)) || events[0];
+  const allEvents = getMergedEvents();
+  const event = allEvents.find(e => e.id === Number(id)) || allEvents[0];
   const [registered, setRegistered] = useState(false);
 
   return (

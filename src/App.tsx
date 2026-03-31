@@ -8,6 +8,7 @@ import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Onboarding from "./pages/Onboarding";
+import SignIn from "./pages/SignIn";
 import AlphaDetail from "./pages/AlphaDetail";
 import FeatureDetail from "./pages/FeatureDetail";
 import SkillsMarketplace, { PostGig, BecomeSeller, SellerProfile } from "./pages/SkillsMarketplace";
@@ -122,6 +123,7 @@ export default function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="admin" element={<AdminDashboard />} />
               <Route path="onboarding" element={<Onboarding />} />
+              <Route path="signin" element={<SignIn />} />
               <Route path="feature/:id" element={<FeatureDetail />} />
               <Route path="skill-marketplace" element={<SkillsMarketplace />} />
               <Route path="skill-marketplace/new-gig" element={<PostGig />} />

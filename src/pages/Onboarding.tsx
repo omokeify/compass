@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase, useSupabase } from '../lib/supabase';
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
-  const totalSteps = 10;
+  const totalSteps = 11;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -28,7 +29,9 @@ export default function Onboarding() {
     // Step 9
     openToTeaching: '',
     // Step 10
-    hasNetwork: '', networkDesc: ''
+    hasNetwork: '', networkDesc: '',
+    // Step 11
+    password: ''
   });
 
   const updateData = (field: string, value: any) => {
@@ -58,6 +61,7 @@ export default function Onboarding() {
       case 8: return !!formData.currentStatus;
       case 9: return !!formData.openToTeaching;
       case 10: return !!formData.hasNetwork && (formData.hasNetwork === 'No' || !!formData.networkDesc);
+      case 11: return !!formData.password && formData.password.length >= 6;
       default: return false;
     }
   };
@@ -69,10 +73,52 @@ export default function Onboarding() {
   };
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
-  const handleSubmit = () => {
-    // In a real app, we would save formData to a backend here
-    // For now, we mock the submission and redirect to the dashboard
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    // Save to local storage for immediate session access
     localStorage.setItem('tcc_user_data', JSON.stringify(formData));
+    
+    // Save to global admin registry (Local Fallback)
+    const globalMembers = JSON.parse(localStorage.getItem('compass_global_members') || '[]');
+    const newMember = {
+      id: Date.now(),
+      name: formData.fullName,
+      email: formData.email,
+      role: formData.web3Role || 'New Builder',
+      status: 'Approved',
+      date: new Date().toLocaleDateString(),
+      details: formData,
+      password: formData.password
+    };
+    
+    // Prevent duplicates in local storage
+    if (!globalMembers.find((m: any) => m.email === newMember.email)) {
+      localStorage.setItem('compass_global_members', JSON.stringify([...globalMembers, newMember]));
+    }
+
+    // BROADCAST TO SUPABASE REGISTRY
+    if (useSupabase) {
+      try {
+        await supabase
+          .from('profiles')
+          .upsert({ 
+            id: crypto.randomUUID(),
+            fullName: formData.fullName,
+            telegram: formData.telegram,
+            email: formData.email,
+            experience: formData.web3Role || 'Builder',
+            signals: ['TCC_MEMBER', 'GENESIS_INTAKE'],
+            status: 'PENDING',
+            payload: { ...formData, password: formData.password },
+            created_at: new Date().toISOString()
+          });
+      } catch (err) {
+        console.error('Supabase Profile Sync Error:', err);
+      }
+    }
+
+    window.dispatchEvent(new Event('storage'));
     navigate('/dashboard');
   };
 
@@ -323,6 +369,28 @@ export default function Onboarding() {
                   )}
                 </>
               )}
+
+              {step === 11 && (
+                <>
+                  <h2 className="font-sans font-black text-2xl uppercase tracking-tighter mb-4 border-b border-brand-border pb-4 text-brand-accent">11. Security Protocol</h2>
+                  <p className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-6 leading-relaxed">Establish your unique <span className="text-white">Command Key</span> to securely access your Dashboard.</p>
+                  <div className="space-y-4">
+                     <p className="font-mono text-[10px] text-brand-muted uppercase">Create Password (Min 6 Characters)</p>
+                     <input 
+                      type="password" 
+                      placeholder="Enter Command Key..." 
+                      value={formData.password} 
+                      onChange={e => updateData('password', e.target.value)} 
+                      className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none" 
+                     />
+                     <div className="p-4 border border-brand-accent/20 bg-brand-accent/5">
+                        <p className="font-mono text-[9px] text-brand-accent uppercase tracking-widest leading-relaxed italic">
+                           This key, paired with your Telegram username or Email, will be your secure gateway into the TCC Hub.
+                        </p>
+                     </div>
+                  </div>
+                </>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -357,7 +425,7 @@ export default function Onboarding() {
                 disabled={!isStepValid()}
                 className={`flex items-center gap-2 px-6 py-4 font-mono text-sm font-bold uppercase tracking-widest transition-colors ${!isStepValid() ? 'bg-brand-surface text-brand-muted cursor-not-allowed border border-brand-border' : 'bg-green-500 text-black hover:bg-green-400'}`}
               >
-                Submit <Check className="w-4 h-4" />
+                Submit Mission <Check className="w-4 h-4" />
               </button>
             )}
           </div>

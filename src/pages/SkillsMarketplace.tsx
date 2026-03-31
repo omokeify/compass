@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Briefcase, User, ArrowUpRight, ArrowLeft, Star, Search, Check, ShieldAlert } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
@@ -16,6 +16,32 @@ const sellers = [
 
 export default function SkillsMarketplace() {
   const [activeTab, setActiveTab] = useState<'gigs' | 'talent'>('gigs');
+  const [gigsList, setGigsList] = useState<any[]>([]);
+  const [sellersList, setSellersList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const syncMarket = () => {
+      const mockGigs = [
+        { id: 1, title: 'Smart Contract Auditor Needed', budget: '$2,000 - $5,000', type: 'Contract', skills: ['Solidity', 'Security', 'Auditing'], postedBy: 'DeFi Protocol X' },
+        { id: 2, title: 'Frontend Dev for NFT Marketplace', budget: '$3,000/mo', type: 'Full-time', skills: ['React', 'Web3.js', 'Tailwind'], postedBy: 'ArtChain' },
+        { id: 3, title: 'Technical Writer (DeFi)', budget: '$500/article', type: 'Freelance', skills: ['Writing', 'DeFi', 'Research'], postedBy: 'YieldAggregator' },
+      ];
+      const mockSellers = [
+        { id: 1, name: 'David O.', role: 'Senior Solidity Developer', rating: 4.9, reviews: 24, rate: '$80/hr', skills: ['Solidity', 'Hardhat', 'Ethers.js'], isVerified: true },
+        { id: 2, name: 'Amara K.', role: 'Web3 UI/UX Designer', rating: 5.0, reviews: 18, rate: '$60/hr', skills: ['Figma', 'Prototyping', 'User Research'], isVerified: true },
+      ];
+
+      const liveGigs = JSON.parse(localStorage.getItem('compass_global_gigs') || '[]');
+      const liveSellers = JSON.parse(localStorage.getItem('compass_global_sellers') || '[]');
+
+      setGigsList([...liveGigs, ...mockGigs]);
+      setSellersList([...liveSellers, ...mockSellers]);
+    };
+
+    syncMarket();
+    window.addEventListener('storage', syncMarket);
+    return () => window.removeEventListener('storage', syncMarket);
+  }, []);
 
   return (
     <div className="min-h-screen pb-24">
@@ -61,7 +87,7 @@ export default function SkillsMarketplace() {
 
         {activeTab === 'gigs' ? (
           <div className="flex flex-col gap-6">
-            {gigs.map((gig, index) => (
+            {gigsList.map((gig, index) => (
               <motion.div
                 key={gig.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -102,7 +128,7 @@ export default function SkillsMarketplace() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {sellers.filter(s => s.isVerified).map((seller, index) => (
+            {sellersList.filter(s => s.isVerified).map((seller, index) => (
               <motion.div
                 key={seller.id}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -155,10 +181,22 @@ export function PostGig() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const gig = {
+      id: Date.now(),
+      title: formData.get('title'),
+      budget: formData.get('budget'),
+      type: formData.get('type'),
+      skills: (formData.get('skills') as string).split(',').map(s => s.trim()),
+      description: formData.get('description'),
+      status: 'PENDING',
+      postedBy: 'Builder ' + Math.floor(Math.random() * 1000), // In real app from auth
+      appliedAt: new Date().toISOString()
+    };
+
+    const apps = JSON.parse(localStorage.getItem('compass_gig_applications') || '[]');
+    localStorage.setItem('compass_gig_applications', JSON.stringify([...apps, gig]));
     setSubmitted(true);
-    setTimeout(() => {
-      navigate('/skill-marketplace');
-    }, 2000);
   };
 
   return (
@@ -176,25 +214,28 @@ export function PostGig() {
         </p>
 
         {submitted ? (
-          <div className="bg-green-500/10 border border-green-500/30 p-8 text-center">
-            <Check className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h3 className="font-sans font-black text-2xl text-green-500 uppercase tracking-tighter mb-2">Gig Posted</h3>
-            <p className="font-mono text-sm text-brand-muted">Redirecting to marketplace...</p>
+          <div className="bg-brand-bg border border-brand-border p-8 text-center">
+            <Check className="w-12 h-12 text-brand-accent mx-auto mb-4" />
+            <h3 className="font-sans font-black text-2xl uppercase tracking-tighter mb-2">Gig Submitted</h3>
+            <p className="font-mono text-sm text-brand-muted mb-6">Your gig has been submitted for admin review. You will be notified once published to the marketplace.</p>
+            <button onClick={() => navigate('/skill-marketplace')} className="bg-brand-surface text-brand-text border border-brand-border px-6 py-3 font-mono text-xs font-bold uppercase tracking-widest hover:border-brand-accent transition-colors">
+              Return to Marketplace
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Gig Title</label>
-              <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Smart Contract Auditor Needed" />
+              <input required name="title" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Smart Contract Auditor Needed" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Budget</label>
-                <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. $2,000 - $5,000" />
+                <input required name="budget" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. $2,000 - $5,000" />
               </div>
               <div>
                 <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Job Type</label>
-                <select required className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text">
+                <select required name="type" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text">
                   <option value="Contract">Contract</option>
                   <option value="Full-time">Full-time</option>
                   <option value="Freelance">Freelance</option>
@@ -203,11 +244,11 @@ export function PostGig() {
             </div>
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Required Skills (comma separated)</label>
-              <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Solidity, React, Security" />
+              <input required name="skills" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Solidity, React, Security" />
             </div>
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Description</label>
-              <textarea required rows={5} className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text resize-none" placeholder="Describe the project and requirements..." />
+              <textarea required name="description" rows={5} className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text resize-none" placeholder="Describe the project and requirements..." />
             </div>
             <button type="submit" className="w-full bg-brand-accent text-black px-8 py-4 font-mono text-sm font-bold uppercase tracking-widest hover:bg-white transition-colors">
               Post Gig
@@ -225,8 +266,23 @@ export function BecomeSeller() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const application = {
+      id: Date.now(),
+      name: 'Builder ' + Math.floor(Math.random() * 1000), // In real app, get from auth
+      role: formData.get('role'),
+      rate: formData.get('rate'),
+      exp: formData.get('exp'),
+      skills: (formData.get('skills') as string).split(',').map(s => s.trim()),
+      bio: formData.get('bio'),
+      portfolio: formData.get('portfolio'),
+      status: 'PENDING',
+      appliedAt: new Date().toISOString()
+    };
+
+    const apps = JSON.parse(localStorage.getItem('compass_seller_applications') || '[]');
+    localStorage.setItem('compass_seller_applications', JSON.stringify([...apps, application]));
     setSubmitted(true);
-    // In a real app, this would submit for admin approval, not immediately list them
   };
 
   return (
@@ -265,30 +321,34 @@ export function BecomeSeller() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
+              <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Full Name / Alias</label>
+              <input required name="name" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. David O." />
+            </div>
+            <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Professional Title</label>
-              <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Senior Solidity Developer" />
+              <input required name="role" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Senior Solidity Developer" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Hourly Rate</label>
-                <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. $80/hr" />
+                <input required name="rate" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. $80/hr" />
               </div>
               <div>
                 <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Years of Experience</label>
-                <input required type="number" min="0" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. 3" />
+                <input required name="exp" type="number" min="0" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. 3" />
               </div>
             </div>
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Top Skills (comma separated)</label>
-              <input required type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Solidity, Hardhat, Ethers.js" />
+              <input required name="skills" type="text" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="e.g. Solidity, Hardhat, Ethers.js" />
             </div>
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Bio / About Me</label>
-              <textarea required rows={5} className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text resize-none" placeholder="Tell clients about your experience and what you can build..." />
+              <textarea required name="bio" rows={5} className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text resize-none" placeholder="Tell clients about your experience and what you can build..." />
             </div>
             <div>
               <label className="font-mono text-xs text-brand-muted uppercase tracking-widest mb-2 block">Portfolio Link</label>
-              <input required type="url" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="https://github.com/yourusername" />
+              <input required name="portfolio" type="url" className="w-full bg-brand-bg border border-brand-border p-4 font-mono text-sm focus:border-brand-accent outline-none text-brand-text" placeholder="https://github.com/yourusername" />
             </div>
             <button type="submit" className="w-full bg-brand-accent text-black px-8 py-4 font-mono text-sm font-bold uppercase tracking-widest hover:bg-white transition-colors">
               Submit for Verification
@@ -302,7 +362,13 @@ export function BecomeSeller() {
 
 export function SellerProfile() {
   const { id } = useParams();
-  const seller = sellers.find(s => s.id === Number(id)) || sellers[0];
+  const sellers = [
+    { id: 1, name: 'David O.', role: 'Senior Solidity Developer', rating: 4.9, reviews: 24, rate: '$80/hr', skills: ['Solidity', 'Hardhat', 'Ethers.js'], isVerified: true },
+    { id: 2, name: 'Amara K.', role: 'Web3 UI/UX Designer', rating: 5.0, reviews: 18, rate: '$60/hr', skills: ['Figma', 'Prototyping', 'User Research'], isVerified: true },
+  ];
+  const liveSellers = JSON.parse(localStorage.getItem('compass_global_sellers') || '[]');
+  const allSellers = [...liveSellers, ...sellers];
+  const seller = allSellers.find(s => s.id === Number(id)) || allSellers[0];
 
   return (
     <div className="min-h-screen pb-24 pt-32 px-6 lg:px-12 max-w-4xl mx-auto">
