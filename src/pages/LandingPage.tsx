@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { features } from '../data/features';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Plus } from 'lucide-react';
 import { TextGlitch } from '../components/ui/text-glitch-effect';
 import { useNavigate } from 'react-router-dom';
 import { supabase, useSupabase } from '../lib/supabase';
@@ -482,6 +482,86 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Mission Catalyst Section */}
+      <section className="py-32 px-6 lg:px-12 border-t border-brand-border bg-brand-bg relative overflow-hidden">
+        {/* Background Accent */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-accent/5 -skew-x-12 transform origin-top translate-x-20 pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32 items-start">
+          {/* Visual Side */}
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="space-y-12"
+          >
+            <h2 className="font-sans font-black text-6xl sm:text-7xl lg:text-8xl uppercase tracking-tighter leading-none text-white transition-all hover:text-brand-accent cursor-default">
+              Launch a <br /> mission.
+            </h2>
+            <div className="relative aspect-[4/3] w-full border border-brand-border bg-brand-surface overflow-hidden group">
+               <div className="absolute inset-0 bg-brand-accent mix-blend-multiply opacity-0 group-hover:opacity-20 transition-all duration-700 z-10" />
+               <img 
+                src="/hub_commanders_minimalist.png" 
+                alt="Hub Commanders" 
+                className="w-full h-full object-cover grayscale transition-all duration-1000 group-hover:scale-105 group-hover:grayscale-0"
+               />
+               <div className="absolute bottom-6 left-6 z-20">
+                  <div className="flex items-center gap-4 bg-brand-bg border border-brand-border px-4 py-2 opacity-80 backdrop-blur-md">
+                     <div className="w-2 h-2 bg-brand-accent animate-pulse rounded-full" />
+                     <span className="font-mono text-[9px] uppercase tracking-widest text-brand-muted">Coordinators Active</span>
+                  </div>
+               </div>
+            </div>
+          </motion.div>
+
+          {/* Action Side */}
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col h-full justify-between pt-12"
+          >
+            <div className="space-y-12">
+               <h3 className="font-sans font-bold text-2xl sm:text-3xl uppercase tracking-tighter text-white leading-tight">
+                  Schedule a 15-minute intel session or broadcast a signal. <span className="text-brand-muted">No gatekeepers.</span>
+               </h3>
+
+               <div className="space-y-6 pt-12 border-t border-brand-border/30">
+                  <div className="space-y-1">
+                     <p className="font-mono text-[10px] text-brand-muted uppercase tracking-widest">Global Dispatch</p>
+                     <a href="mailto:mission@compass.community" className="font-mono text-sm text-white hover:text-brand-accent transition-colors">mission@compass.community</a>
+                  </div>
+                  <p className="font-mono text-[10px] text-brand-muted uppercase tracking-widest leading-loose max-w-[200px]">
+                     Empowering technically-vetted builders worldwide.
+                  </p>
+               </div>
+
+               <div className="pt-16 space-y-8">
+                  <button onClick={() => navigate('/onboarding')} className="font-mono text-[10px] font-black uppercase tracking-[0.3em] text-white hover:text-brand-accent transition-colors flex items-center gap-3">
+                     Get Started <ArrowRight className="w-3 h-3" />
+                  </button>
+                  
+                  <div className="flex">
+                    <button className="bg-white text-black px-8 py-5 font-mono text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent transition-all active:scale-95">
+                       Schedule Intel Session
+                    </button>
+                    <div className="bg-white border-l border-black/10 text-black px-5 flex items-center justify-center hover:bg-brand-accent transition-all cursor-pointer">
+                       <Plus className="w-5 h-5" />
+                    </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="mt-24">
+               <p className="font-mono text-[10px] text-brand-muted uppercase tracking-[0.4em] italic">
+                  Let the <span className="text-white not-italic">Hub</span> handle it.
+               </p>
+            </div>
+          </motion.div>
         </div>
       </section>
     </div>

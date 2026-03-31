@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, Activity } from 'lucide-react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
+import { X, Activity, Plus } from 'lucide-react';
 
 const navLinks = [
   { name: 'Dashboard', path: '/dashboard', memberOnly: true },
@@ -17,6 +17,7 @@ export default function Layout() {
   const [isRegistered, setIsRegistered] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const containerRef = useRef(null);
 
   useEffect(() => {
     setIsRegistered(!!localStorage.getItem('tcc_user_data'));
@@ -31,8 +32,16 @@ export default function Layout() {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["end end", "end start"]
+  });
+  
+  // High-fidelity Parallax: Slide up from behind as we scroll to the very end
+  const footerY = useTransform(scrollYProgress, [0, 1], [200, 0]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-brand-bg text-brand-text font-sans selection:bg-brand-accent selection:text-white">
+    <div ref={containerRef} className="min-h-screen flex flex-col bg-brand-bg text-brand-text font-sans selection:bg-brand-accent selection:text-white">
       {/* Top Header */}
       <header className="fixed top-0 w-full z-[70] border-b border-brand-border bg-brand-bg/90 backdrop-blur-md">
         <div className="w-full px-6 lg:px-12 py-4 flex justify-between items-center relative">
@@ -190,7 +199,7 @@ export default function Layout() {
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 relative z-10 bg-brand-bg">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname + location.search}
@@ -204,20 +213,86 @@ export default function Layout() {
         </AnimatePresence>
       </main>
       
-      {/* Global Footer Managed by Layout */}
-      <footer className="border-t border-brand-border py-12 bg-brand-bg relative z-10">
-        <div className="w-full px-6 lg:px-12 flex flex-col md:flex-row justify-between items-start gap-8">
-          <div>
-            <span className="font-sans font-black text-2xl tracking-tighter uppercase block mb-2">COMPASS</span>
-            <p className="font-mono text-[9px] text-brand-muted uppercase tracking-[0.3em]">Precision Web3 Ecosystem // 2026</p>
-          </div>
-          <div className="flex gap-12 font-mono text-[9px] text-brand-muted uppercase tracking-[0.4em]">
-            <a href="#" className="hover:text-brand-accent transition-colors">Privacy</a>
-            <a href="#" className="hover:text-brand-accent transition-colors">Terms</a>
-            <a href="#" className="hover:text-brand-accent transition-colors">X // Twitter</a>
-          </div>
+      {/* High-Fidelity Governance Footer with PARALLAX REVEAL */}
+      <motion.footer 
+        style={{ y: footerY }}
+        className="sticky bottom-0 z-0 border-t border-brand-border bg-brand-bg relative overflow-hidden pt-32 pb-20"
+      >
+        {/* Background Architectural Text - HUGE */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-full text-center select-none pointer-events-none z-0 opacity-[0.03] whitespace-nowrap">
+          <span className="font-sans font-black text-[30vw] uppercase leading-none tracking-tighter">
+            COMPASS
+          </span>
         </div>
-      </footer>
+
+        <div className="w-full px-6 lg:px-12 relative z-10 max-w-full">
+           <div className="grid grid-cols-1 lg:grid-cols-4 gap-16 lg:gap-24 items-start mb-32">
+              {/* Left Column: Newsletter & Status */}
+              <div className="lg:col-span-1 space-y-12">
+                 <div className="space-y-6">
+                    <h3 className="font-sans font-bold text-lg uppercase tracking-tighter text-white">Secure your signal.</h3>
+                    <div className="flex flex-col gap-2">
+                       <input type="text" placeholder="Name" className="w-full bg-brand-surface border border-brand-border p-3 font-mono text-[10px] outline-none focus:border-brand-accent text-white uppercase" />
+                       <div className="flex">
+                          <input type="email" placeholder="Email" className="flex-1 bg-brand-surface border border-brand-border p-3 font-mono text-[10px] outline-none focus:border-brand-accent text-white uppercase" />
+                          <button className="bg-white text-black px-6 py-3 font-mono text-[9px] font-black uppercase tracking-widest hover:bg-brand-accent transition-all flex items-center gap-2">
+                             Subscribe <Plus className="w-4 h-4" />
+                          </button>
+                       </div>
+                       <p className="font-mono text-[8px] text-brand-muted uppercase tracking-widest mt-2 italic">Unsubscribe anytime from the hub.</p>
+                    </div>
+                 </div>
+
+                 <div className="space-y-3 pt-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-2.5 h-2.5 bg-brand-accent rounded-full animate-pulse" />
+                       <span className="font-mono text-[10px] text-brand-accent font-black uppercase tracking-[0.2em]">MISSION ACTIVE: JOIN THE HUB.</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                       <div className="w-2.5 h-2.5 bg-brand-accent rounded-full opacity-50" />
+                       <span className="font-mono text-[10px] text-brand-muted font-black uppercase tracking-[0.2em]">NEW ALPHA BROADCASTING.</span>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Center Column: Navigation */}
+              <div className="lg:col-span-2 flex flex-col items-center">
+                 <nav className="flex flex-col items-center gap-4">
+                    {['Home', 'Alpha', 'Earning', 'Market', 'About', 'Contact'].map(link => (
+                       <button key={link} onClick={() => navigate(link === 'Home' ? '/' : link === 'Market' ? '/skill-marketplace' : '/dashboard')} className="font-mono text-[10px] text-brand-text hover:text-brand-accent uppercase tracking-[0.4em] transition-all py-1">
+                          {link}
+                       </button>
+                    ))}
+                 </nav>
+              </div>
+
+              {/* Right Column: Contact & Legal */}
+              <div className="lg:col-span-1 space-y-12 lg:text-right">
+                 <div className="space-y-3">
+                    <a href="mailto:mission@compass.community" className="font-mono text-[10px] text-white hover:text-brand-accent uppercase tracking-widest block border-b border-brand-border/30 pb-2">mission@compass.community</a>
+                    <a href="mailto:governance@compass.community" className="font-mono text-[10px] text-white hover:text-brand-accent uppercase tracking-widest block border-b border-brand-border/30 pb-2">governance@compass.community</a>
+                 </div>
+                 <div className="space-y-4 pt-4">
+                    <div className="space-x-8">
+                       <button className="font-mono text-[9px] text-brand-muted hover:text-white uppercase tracking-widest">Privacy Policy</button>
+                       <button className="font-mono text-[9px] text-brand-muted hover:text-white uppercase tracking-widest">Legal Notice</button>
+                    </div>
+                    <div className="flex justify-start lg:justify-end gap-3">
+                       <div className="bg-brand-surface border border-brand-border px-2 py-1 flex items-center gap-2">
+                          <div className="w-4 h-4 border border-brand-accent/30 text-brand-muted flex items-center justify-center font-mono text-[7px] uppercase">G</div>
+                          <span className="font-mono text-[8px] text-brand-muted uppercase">Grid Toggle</span>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           <div className="flex flex-col items-center gap-3 pt-16 border-t border-brand-border/30">
+              <span className="font-sans font-black text-xs uppercase tracking-widest text-brand-muted">© 2026 THE COMPASS HUB</span>
+              <p className="font-mono text-[9px] text-brand-muted uppercase tracking-[0.5em] italic">Let the Hub handle it.</p>
+           </div>
+        </div>
+      </motion.footer>
 
       {/* Social Proof Toaster */}
       <SocialProofToaster />
